@@ -187,6 +187,8 @@ namespace iid_loss{
 		PetscErrorCode     ierr;
 		PetscInt  m_local, tm_local, dim_local;
 
+		// m_local should be 26 times the number of local letters in the training data
+		// dim_local should be 26 times the number of local features
 		PetscFunctionBegin;
 		ierr = MatGetLocalSize(user->data, &m_local, &dim_local); CHKERRQ(ierr);
 		ierr = MatGetLocalSize(user->tdata, &tm_local, &dim_local); CHKERRQ(ierr);
