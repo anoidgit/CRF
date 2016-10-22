@@ -18,7 +18,7 @@ function plot() {
 	for lambda in ${lambdas[@]};do
 		echo "lambda = "$lambda
 		awk '$1 ~ /^[0-9]+$/ {print $0}'  $lambda.txt > tmp.txt
-		echo $plot_setup" set output '| ps2pdf - p2_"$lambda".pdf; plot 'tmp.txt' using 1:xtic(4) notitle;" | gnuplot
+		echo $plot_setup" set output '| ps2pdf - p2_"$lambda".pdf; plot 'tmp.txt' using 4:2 notitle;" | gnuplot
 	done
 	
 	rm tmp.txt
