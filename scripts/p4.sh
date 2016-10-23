@@ -37,7 +37,7 @@ function plot() {
 	done
 	t1=`awk '{if($1 ~ /^[0-9]+$/ && NF == 9 && $2 < 1.01*'$f_star') print $4;}' ./output/core_1.txt | head -n 1`
 	echo $t1
-	echo $plot_setup" set output '| ps2pdf - p4_scalability.pdf'; plot 'tmp.txt' using 1:("$t1"/"'$2'") w lp lw 2 ps 2 pt 2 notitle;" | gnuplot
+	echo $plot_setup" set output '| ps2pdf - p4_scalability.pdf'; plot 'tmp.txt' using 1:("$t1"/"'$2'") w lp lw 2 ps 2 pt 3 notitle;" | gnuplot
 	rm tmp.txt
 }
 
