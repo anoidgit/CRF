@@ -11,6 +11,7 @@ function run_exp() {
 		echo "lambda = "$lambda
 		$PETSC_DIR/$PETSC_ARCH/bin/mpirun -n 3 ../code_PETSc/seq_train -data ../data/train.txt -tdata ../data/test.txt -lambda $lambda -loss CRF -tol 1e-3 > $lambda.txt
 	done
+	mv *.txt ./output/
 }
 
 function plot() {
