@@ -25,16 +25,20 @@ function plot() {
 		rm tmp.txt
 	fi
 
-	plot_setup="set terminal postscript font ',30'; set style fill pattern border; set xlabel 'CPU time (seconds)'; set yrange[0:*];set ylabel 'object value'; set lmargin 5; set tmargin 0; set bmargin 1;set rmargin 0;"
+	plot_setup="set terminal postscript font ',30'; set style fill pattern border; set xlabel 'Number of cores'; set yrange[0:*];set ylabel 'Speedup'; set lmargin 5; set tmargin 0; set bmargin 1;set rmargin 0;"
+
 	for n in ${cores[@]};do
 		echo $n" cores"
-		tail -n 1 "core_"$n".txt" | awk '{print '$n', $4}'>> tmp.txt
+		
+		f_star = `awk '{ if($1 ~ /^[0-9]+$/ && NF == 9) print $0}'  core_"$n".txt | tail -n 1 | awk '{print $2}'`
+		# get the first line that has f less than 1.01*f_star
+		awk '{if($2 < 1.01*"'$f_star') {print '$n', $4; exit;}}' "core_"$n".txt" >> tmp.txt
 	done
-	t1=`tail -n 1 "core_1.txt" | awk '{print $4}'`
+	t1=`awk '{if($2 < 1.01*"'$f_star') {print '$n', $4; exit;}}' core_1.txt`
 	echo $t1
-	echo $plot_setup" set output '| ps2pdf - p4_scalability.pdf'; plot 'tmp.txt' using 1:("'$2'"/"$t1") w lp notitle;" | gnuplot
+#	echo $plot_setup" set output '| ps2pdf - p4_scalability.pdf'; plot 'tmp.txt' using 1:("$t1"/"'$2'") w lp lw 2 ps 2 notitle;" | gnuplot
 #	rm tmp.txt
 }
 
-#run_exp
-plot
+run_exp
+#plot
