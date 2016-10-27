@@ -6,7 +6,7 @@ require 'LinearCRF'
 
 torch.manualSeed(1)
 
-local train = torch.load('valid_torch.dat','ascii')
+local train = torch.load('../data/debug_torch.dat','ascii')
 
 data = train.data
 local nFea = train.nFea
@@ -31,12 +31,12 @@ grad_from_CRFCriterion = {gNode=gNode, gEdge=gEdge}
 function obj(x)
 	parameters:copy(x)
 	gradParameters:zero()
-	
+
 	output = model:forward(input)
-  local f = torch.dot(output.outNode, gNode) + torch.dot(output.wEdge, gEdge)
-  
-  -- estimate df/dW
-  model:backward(input, grad_from_CRFCriterion)
+	local f = torch.dot(output.outNode, gNode) + torch.dot(output.wEdge, gEdge)
+
+	-- estimate df/dW
+	model:backward(input, grad_from_CRFCriterion)
 	return f, gradParameters
 end
 
