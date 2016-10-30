@@ -9,7 +9,7 @@ local lambda = 1e-3  -- the lambda value in Eq (4)
 
 opt = {}
 opt.maxIter = 50			-- max number of iterations in BFGS
-opt.nCorrection = 10 	-- number of previous gradients used to approximate the Hessian
+opt.nCorrection = 10 		-- number of previous gradients used to approximate the Hessian
 opt.learningRate = 1e-1		-- fixed step size used in the line search of BFGS
 
 -- Specify the filenames of the training and test data
@@ -25,7 +25,7 @@ optimState = {
 	maxIter = opt.maxIter,
 	nCorrection = opt.nCorrection,
 	verbose = true		-- print a bit more information from the solver
-	--    lineSearch = optim.lswolfe,  -- if we use this then the function might 
+	-- lineSearch = optim.lswolfe,  -- if we use this then the function might 
 	-- be evaluated multiple times at each iteration
 }
 optimMethod = optim.lbfgs		-- use LBFGS as the optimization solver
@@ -33,18 +33,18 @@ optimMethod = optim.lbfgs		-- use LBFGS as the optimization solver
 ----------------------------------------------------------------------
 local train = torch.load(train_fname, 'ascii')
 data = train.data			
-nFea = train.nFea			-- number of features (129)
-nState = train.nState	-- number of possible labels (26)
-label = train.label		-- array recording the label of all letters (1-26)
-wLen = train.wLen			-- array recording the number of letters in each word
+nFea = train.nFea				-- number of features (129)
+nState = train.nState			-- number of possible labels (26)
+label = train.label				-- array recording the label of all letters (1-26)
+wLen = train.wLen				-- array recording the number of letters in each word
 cumwLen = torch.cumsum(wLen)	-- cumulative sum of wLen
 
 local test = torch.load(test_fname, 'ascii')
 tdata = test.data
 assert(nFea == test.nFea)
 assert(nState == test.nState)
-tlabel = test.label		-- array recording the label of all letters (1-26)
-twLen = test.wLen			-- array recording the number of letters in each word
+tlabel = test.label				-- array recording the label of all letters (1-26)
+twLen = test.wLen				-- array recording the number of letters in each word
 tcumwLen = torch.cumsum(twLen)	-- cumulative sum of wLen
 
 -- max #letter throughout all words
@@ -62,6 +62,11 @@ model = nn.Sequential()
 model:add(nn.LinearCRF(nState, nFea, data))
 criterion = nn.ClassCRFCriterion(nState, torch.max(wLen))
 parameters,gradParameters = model:getParameters()
+
+tmodel = nn.Sequential()
+tmodel:add(nn.LinearCRF(nState, nFea, tdata))
+tcriterion = nn.ClassCRFCriterion(nState, torch.max(twLen))
+tparameters,tgradParameters = tmodel:getParameters()
 
 -- Function that computes the objective value and its gradient
 local function feval(x)
@@ -94,7 +99,6 @@ end
 
 -- set model to training mode (for modules that differ in training and testing, like Dropout)
 model:training()
-
 
 --- Allocate some persistent memory for MAP inference
 --- Functions dp_argmax and find_MAP are for MAP inference
@@ -138,8 +142,8 @@ local function Monitor(x)
 	local wError = 0
 	parameters:copy(x)
 	for i = 1,nWord do  -- loop over training words	  
-		first = i > 1 and cumwLen[i-1]+1 or 1	--index of the first letter in the word
-		last = cumwLen[i]											--index of the last letter in the word
+		first = i > 1 and cumwLen[i-1]+1 or 1		--index of the first letter in the word
+		last = cumwLen[i]							--index of the last letter in the word
 		lenWord = last-first+1
 		local input = torch.linspace(first, last, lenWord)		
 		local output = model:forward(input)
@@ -164,6 +168,34 @@ local function Monitor(x)
 	--[[
 	Your code to compute the test errors
 	--]]
+	local tlError = 0
+	local twError = 0
+	local tnWord = (#test.wLen)[1]
+
+	tparameters:copy(x)
+	for i = 1,tnWord do  -- loop over testing words	  
+		local tfirst = i > 1 and tcumwLen[i-1]+1 or 1			--index of the first letter in the word
+		local tlast = tcumwLen[i]								--index of the last letter in the word
+		local tlenWord = tlast-tfirst+1
+		local tinput = torch.linspace(tfirst, tlast, tlenWord)
+		local toutput = tmodel:forward(tinput)
+		local ttarget = tlabel:sub(tfirst, tlast)
+
+		-- Call the MAP routine to fine the most likely output as our prediction
+		tpred_word = find_MAP(toutput.outNode, toutput.wEdge)
+
+		-- Compare with the ground truth
+		local twFail = false
+		for j = 1,tlenWord do
+			if tpred_word[j] ~= ttarget[j] then
+				tlError = tlError + 1
+				twFail = true
+			end
+		end
+		if twFail then twError = twError + 1 end
+	end	
+	te_word_err = twError * 100.0 / tnWord
+	te_let_err = tlError * 100.0 / tcumwLen[tnWord]
 
 	-- Different from print(), io.write does not append the newline.
 	io.write(string.format("%.2f %.2f %.2f %.2f", tr_let_err, tr_word_err, te_let_err, te_word_err))

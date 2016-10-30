@@ -94,18 +94,27 @@ function ClassCRFCriterion:updateGradInput(input, target)
 	--[[
 	Your implementation here
 	--]]
-	-- self.edge_marg is #letter-by-nState-bynState, need to accumulate for each letter
+	-- self.edge_marg is #letter-by-nState-by-nState, need to accumulate for each letter
 	local nNode = (#target)[1]
 	local nState = self.nState
-	local edge_marg = self.edge_marg
+	local node_marg = self.node_marg:sub(1,nNode)
+	if nNode > 1 then
+		local edge_marg = self.edge_marg:sub(1,nNode-1)
+	end
 
-	gEdge = torch.zeros(nState, nState)
+	local gEdge = torch.zeros(nState, nState)
 
-	for i=1,nNode do
+	-- subtract indicator
+	for i = 1, nNode do
+		node_marg[i][target[i]] = node_marg[i][target[i]]-1;
+	end
+
+	for i=1,nNode-1 do
+		edge_marg[i][target[i]][target[i+1]] = edge_marg[i][target[i]][target[i+1]] - 1;
 		gEdge:add(edge_marg[i])
 	end
 	-- self.node_marg is already computed
-	self.gradInput = {gNode = self.node_marg, gEdge = gEdge}
+	self.gradInput = {gNode = node_marg, gEdge = gEdge}
 
 	return self.gradInput 
 end

@@ -36,7 +36,7 @@ function obj(x)
 	local f = torch.dot(output.outNode, gNode) + torch.dot(output.wEdge, gEdge)
 
 	-- estimate df/dW
-	model:backward(input, grad_from_CRFCriterion)
+	model:backward(input, grad_from_CRFCriterion)	
 	return f, gradParameters
 end
 
