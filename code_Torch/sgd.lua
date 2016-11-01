@@ -59,7 +59,7 @@ function sgd(opfunc, x, config, state)
 
 	local f_old = state.f_old
 	local nIter = 0
-	
+
 	while nIter < maxIter do
 		if fmod(state.updateCount, fevalIntervel) == 0 then
 			f_old = fx
@@ -73,7 +73,7 @@ function sgd(opfunc, x, config, state)
 			print('')
 		end
 		
-		fi,gi = sample(x)
+		i, fi,gi = sample(x)
 
 		-- parameter update with single or individual learning rates
 		if learningRate then

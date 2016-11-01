@@ -76,6 +76,8 @@ max_word_len = torch.max(torch.DoubleTensor{wLen:max(), twLen:max()})
 nWord = (#train.wLen)[1]
 if nWord > capWord then nWord = capWord  end
 optimState.fevalIntervel = math.ceil(nWord/3)	-- compute objective function after the number of updates
+optimState.L = torch.ones(nWord)			-- Lipschitz constant for each training example
+optimState.sampleRecord = torch.zeros(nWord)			-- record of training example if it is sampled before
 
 print('==> training in progress with ' .. nWord .. ' words')
 
@@ -251,14 +253,36 @@ local function Monitor(x)
 	io.write(string.format("%.2f %.2f %.2f %.2f", tr_let_err, tr_word_err, te_let_err, te_word_err))
 end
 
+-- sample one training example uniformly and return its f and gradient
 local function uniformSample(x)
 	idx = math.random(nWord)
 	-- print('sample ', idx)
-	return singleEval(x, idx)
+	return idx, singleEval(x, idx)
 end
 
-local function nonUniformSample(x)
+-- input x: w in CRF problem
+--		 L: Lipschitz constant for each training example
+local function nonUniformSample(x, L)
+	i = math.random()
+	-- first time or half probability
+	if L:sum() == L:size(1) or i > 0.5 then
+		idx = math.random(nWord)
+	else
+		-- get the mean of L
+		p = torch.div(L, L:sum())
+		-- sample by weight
+		-- !!! UNDONE: sample
+		idx =  0
 
+	end
+
+	fi, gi = singleEval(x, idx)
+	if torch.norm(gi) > 1e-8 then
+		-- !!! UNDONE: line search
+		L[idx] = lineSearch()
+	end
+
+	return idx, fi, gi
 end
 
 -- Set the monitor for the solver.
