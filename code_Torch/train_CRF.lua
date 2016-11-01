@@ -2,15 +2,38 @@ require 'nn'
 require 'optim'   
 require 'ClassCRFCriterion'
 require 'LinearCRF'
+require 'sgd'
+
+cmd = torch.CmdLine()
+cmd:option('-lambda',1e-3,'regularization parameter')
+cmd:option('-optim', 'LBFGS' ,'optimization method')
+cmd:option('-iter',50,'number of maximal iterations')
+cmd:option('-lr',1e-1,'learning rate')
+cmd:option('-b',1,'number of words in gradient update')
+-- parse input params
+params = cmd:parse(arg)
+-- print(params)
+	
+if params.optim == 'sgd' then
+	optimMethod = sgd
+elseif params.optim == 'sag' then
+	optimMethod = sag_nus
+else
+	-- default
+	optimMethod = optim.lbfgs		-- use LBFGS as the optimization solver
+end
+
+-- optimMethod = sgd
+-- optimMethod = sag_nus
+
+local lambda = params.lambda -- 1e-3  -- the lambda value in Eq (4)
 
 torch.manualSeed(1)	-- fix the seed of the random number generator for reproducing the results
 
-local lambda = 1e-3  -- the lambda value in Eq (4)
-
 opt = {}
-opt.maxIter = 50			-- max number of iterations in BFGS
+opt.maxIter = params.iter			-- max number of iterations in BFGS
 opt.nCorrection = 10 		-- number of previous gradients used to approximate the Hessian
-opt.learningRate = 1e-1		-- fixed step size used in the line search of BFGS
+opt.learningRate = params.lr	-- fixed step size used in the line search of BFGS
 
 -- Specify the filenames of the training and test data
 local train_fname = '../data/train_torch.dat'
@@ -24,11 +47,10 @@ optimState = {
 	learningRate = opt.learningRate, -- used if 'lineSearch' is not specified
 	maxIter = opt.maxIter,
 	nCorrection = opt.nCorrection,
-	verbose = true		-- print a bit more information from the solver
+	verbose = true,			-- print a bit more information from the solver
 	-- lineSearch = optim.lswolfe,  -- if we use this then the function might 
 	-- be evaluated multiple times at each iteration
 }
-optimMethod = optim.lbfgs		-- use LBFGS as the optimization solver
 
 ----------------------------------------------------------------------
 local train = torch.load(train_fname, 'ascii')
@@ -53,7 +75,7 @@ max_word_len = torch.max(torch.DoubleTensor{wLen:max(), twLen:max()})
 -- Cap the number of words used for training at capWord
 nWord = (#train.wLen)[1]
 if nWord > capWord then nWord = capWord  end
-
+optimState.fevalIntervel = math.ceil(nWord/3)	-- compute objective function after the number of updates
 
 print('==> training in progress with ' .. nWord .. ' words')
 
@@ -97,6 +119,37 @@ local function feval(x)
 	return f,gradParameters
 end
 
+-- get gradient and object value of ith word
+local function singleEval(x, i)
+	parameters:copy(x)
+	gradParameters:zero()	
+
+	-- out of scope
+	if i < 1 or i > nWord then
+		return nil
+	end
+
+	-- evaluate function by enumerating all words
+		-- estimate f
+	first = i > 1 and cumwLen[i-1]+1 or 1	--index of the first letter in the word
+	last = cumwLen[i]											--index of the last letter in the word
+	local input = torch.linspace(first, last, last-first+1)	
+	local output = model:forward(input)
+	local target = label:sub(first, last)
+	local f = criterion:forward(output, target)
+
+	-- estimate df/dW
+	local df_do = criterion:backward(output, target)
+	model:backward(input, df_do)		
+
+	-- gradients and f(X), add regularization
+	gradParameters:div(nWord):add(lambda*x)
+	f = f + lambda*torch.pow(x:norm(), 2)/2
+
+	-- return df/dX
+	return f, gradParameters
+end
+
 -- set model to training mode (for modules that differ in training and testing, like Dropout)
 model:training()
 
@@ -134,9 +187,6 @@ end
 --   See the online tutorial for computing the test error:
 --    https://web.archive.org/web/20151116000833/http://code.madbits.com/wiki/doku.php?id=tutorial_supervised_5_test
 local function Monitor(x)
-
-	te_word_err = -1		-- dummy, to be set by your code
-	te_let_err = -1			-- dummy, to be set by your code
 
 	local lError = 0
 	local wError = 0
@@ -201,12 +251,29 @@ local function Monitor(x)
 	io.write(string.format("%.2f %.2f %.2f %.2f", tr_let_err, tr_word_err, te_let_err, te_word_err))
 end
 
+local function uniformSample(x)
+	idx = math.random(nWord)
+	-- print('sample ', idx)
+	return singleEval(x, idx)
+end
+
+local function nonUniformSample(x)
+
+end
+
 -- Set the monitor for the solver.
 -- If commented out, then the training/test errors won't be printed/computed.
 optimState.monitor = Monitor
+if params.optim == 'sgd' then
+	optimState.sampler = uniformSample
+end
+
+if params.optim == 'sag' then
+	optimState.sampler = nonUniformSample
+end
 
 -- Really start the optimization
-print('iter fn.val gap time feval.num train_lett_err train_word_err test_lett_err test_word_err')
-x,fx = optimMethod(feval, parameters, optimState)
+ print('iter fn.val gap time feval.num train_lett_err train_word_err test_lett_err test_word_err')
+ x,fx = optimMethod(feval, parameters, optimState)
 
 -- for i=1,#fx do print(i,fx[i]); end	-- secrete
