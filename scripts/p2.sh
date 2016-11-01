@@ -18,7 +18,7 @@ function plot() {
 	plot_setup="set terminal postscript font ',30'; set style fill pattern border; set xlabel 'CPU time (seconds)'; set yrange[0:*];set ylabel 'object value'; set lmargin 5; set tmargin 0; set bmargin 1;set rmargin 0;"
 	for lambda in ${lambdas[@]};do
 		echo "lambda = "$lambda
-		awk '{ if($1 ~ /^[0-9]+$/ && NF == 9) print $0}'  $lambda.txt > tmp.txt
+		awk '{ if($1 ~ /^[0-9]+$/ && NF == 9) print $0}'  ./output/$lambda.txt > tmp.txt
 		echo $plot_setup" set output '| ps2pdf - p2_"$lambda".pdf'; plot 'tmp.txt' using 4:2 w l lw 2 notitle;" | gnuplot
 	done
 	
