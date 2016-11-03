@@ -11,15 +11,15 @@ function run_exp() {
 	for lambda in ${lambdas[@]};do
 		echo "lambda = "$lambda
 #		th ./train_CRF.lua -lambda $lambda -optim lbfgs > "lbfgs_"$lambda".txt"
-		th ./train_CRF.lua -lambda $lambda -optim sgd > "sgd_"$lambda".txt"
-#		th ./train_CRF.lua -lambda $lambda -optim sag > "sag_nus_"$lambda".txt"
+#		th ./train_CRF.lua -lambda $lambda -optim sgd > "sgd_"$lambda".txt"
+		th ./train_CRF.lua -lambda $lambda -optim sag > "sag_nus_"$lambda".txt"
 	done
 	cd -
 #	mv ../code_Torch/*.txt ./output/
 }
 
 function plot() {
-	plot_setup="set terminal postscript color font ',30'; set style fill pattern border; set xlabel 'CPU time (seconds)'; set yrange[0:*];set ylabel 'Training object value'; set lmargin 5; set tmargin 0; set bmargin 1;set rmargin 0;"
+	plot_setup="set terminal postscript color font ',30'; set style fill pattern border; set xlabel 'CPU time (seconds)'; set yrange[0:*];set ylabel 'Training object value'; set lmargin 5; set tmargin 0; set bmargin 1;set rmargin 10;"
 	for lambda in ${lambdas[@]};do
 		echo "lambda = "$lambda
 		awk '{ if($1 ~ /^[0-9]+$/ && NF == 9) print $0}'  "./output/lbfgs_"$lambda.txt > tmp1.txt
@@ -32,5 +32,5 @@ function plot() {
 #	rm tmp*.txt
 }
 
-#run_exp
-plot
+run_exp
+#plot

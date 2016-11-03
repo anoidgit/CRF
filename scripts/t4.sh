@@ -2,17 +2,15 @@
 
 lambda="1e-4"
 
-if [[ -f tmp.txt ]];then
-	rm tmp.txt
+if [[ -f tmp*.txt ]];then
+	rm tmp*.txt
 fi
 
 function run_exp() {
 	cd ../code_Torch
-	for lambda in ${lambdas[@]};do
-		echo "lambda = "$lambda
-		th ./train_CRF.lua -lambda $lambda -optim sgd > "sgd_all_"$lambda".txt"
-#		th ./train_CRF.lua -lambda $lambda -optim sag > "sag_nus_all_"$lambda".txt"
-	done
+	echo "lambda = "$lambda
+	th ./train_CRF.lua -lambda $lambda -optim sgd -n -1 -b 1000 > "sgd_all_"$lambda".txt"
+#	th ./train_CRF.lua -lambda $lambda -optim sag -n -1 -b 1000 > "sag_nus_all_"$lambda".txt"
 	cd -
 	mv ../code_Torch/*.txt ./output/
 }
@@ -30,3 +28,5 @@ function plot() {
 	
 	rm tmp*.txt
 }
+
+run_exp
