@@ -90,8 +90,6 @@ function sag_nus(opfunc, x, config, state)
 
 	local g_old = torch.Tensor(nWord,g:size(1)):zero()
 	local f_old = 0
-	local x_old = torch.zeros(x:size())
-
 
 	-- optimize for a max of maxIter iterations
 	local nIter = 0							-- iteration number

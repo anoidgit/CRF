@@ -2,8 +2,8 @@ require 'nn'
 require 'optim'   
 require 'ClassCRFCriterion'
 require 'LinearCRF'
-require 'SGD'
-require 'SAG_NUS'
+require 'sgd'
+require 'sag_nus'
 
 cmd = torch.CmdLine()
 cmd:option('-lambda',1e-3,'regularization parameter')
@@ -276,8 +276,6 @@ local function Llinesearch(x,idx,Li,fi,gi)
     local x_p = torch.add(x, -1/Li, gi)
     local f_p,g_p = singleEval(x_p,idx)
     local g_norm = torch.pow(gi:norm(), 2)
- 	-- f_p = f_p - lambda*torch.pow(x_p:norm(), 2)/2
-	-- g_p:add(-lambda*x_p)
 	--print('--------------------')
 	-- print(Li)
 	local count = 0
@@ -285,9 +283,7 @@ local function Llinesearch(x,idx,Li,fi,gi)
     	Li = 2*Li
      	x_p:add(-1/Li, gi)
         f_p,g_p = singleEval(x_p,idx)
-        -- f_p = f_p - lambda*torch.pow(x_p:norm(), 2)/2
         -- print(idx, Li, f_p, fi, (fi - 1/2/Li*g_norm))
-	--  g_p:add(-lambda*x_p)
     end
     -- restore the old w parameter of the model
     parameters:copy(x)
@@ -312,10 +308,6 @@ local function nonUniformSample(x, L)
 	
 	-- print(rand_idx)
 	local fi, gi = singleEval(x, rand_idx)
-
-	-- subtract 
-	-- fi = fi - lambda*torch.pow(x:norm(), 2)/2
-	-- gi:add(-lambda*x)
 	--if torch.pow(gi:norm(),2) > 1e-8 then
 		--L[idx] = lineSearch(x,idx,L[idx],fi)
 	--end

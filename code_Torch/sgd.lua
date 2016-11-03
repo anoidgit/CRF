@@ -75,10 +75,10 @@ function sgd(opfunc, x, config, state)
 			i,fi,gi = sample(x)
 			-- parameter update with single or individual learning rates
 			if learningRate then
-				gi:add(lambda*x_old)
+				gi:add(lambda*x)
 				-- x_old:copy(x)
-				state.updateCount = state.updateCount + 1
 				x:add(-learningRate, gi)
+				state.updateCount = state.updateCount + 1
 			end
 		end
 
