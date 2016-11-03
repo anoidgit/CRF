@@ -41,9 +41,7 @@ function sag_nus(opfunc, x, config, state)
 	local maxEval = tonumber(config.maxEval) or maxIter*1.25
 	local tolFun = config.tolFun or 1e-5
 	local tolX = config.tolX or 1e-9
-	local nCorrection = config.nCorrection or 100
 	local lineSearch = config.lineSearch
-	local lineSearchOpts = config.lineSearchOptions
 	local learningRate = config.learningRate or 1
 	local isverbose = config.verbose or false
 	local monitor = optimState.monitor
@@ -94,13 +92,14 @@ function sag_nus(opfunc, x, config, state)
 	-- optimize for a max of maxIter iterations
 	local nIter = 0							-- iteration number
 	local d = g.new(g:size()):zero()		-- sum of gradients, initialized zero
-	local m = 0
+	local m = 0								-- number of sampled word in 
 
 	while nIter < maxIter do
 
 		nIter = nIter + 1
 		state.nIter = state.nIter + 1
-		state.funcEval = state.funcEval + 1
+		-- number of effective passes 
+		state.funcEval = state.updateCount/nWord
 		io.write(string.format("%d %.4f %.4f %.3f %d ", nIter-1, fx, gtol, sys.clock()-start_time, state.funcEval))
 		if monitor then monitor(x) end
 		print('')
@@ -115,20 +114,23 @@ function sag_nus(opfunc, x, config, state)
 
 			-- no skip time for the word
 			-- ready for line search
-			if torch.pow(gi:norm(),2) > 1e-8 and lineSearchToSkip[rand_idx] <= 0 then
-				local Lnew = lineSearch(x,rand_idx,L[rand_idx],fi,gi)
-				-- print(Lnew, L[rand_idx])
-				-- if no backtracking is performed
-				if Lnew == L[rand_idx] then
-					-- accumulate skip backtracking time
-					backtrackingSkip[rand_idx] = backtrackingSkip[rand_idx] + 1
-					-- update time to skip count
-					lineSearchToSkip[rand_idx] = pow(2, (backtrackingSkip[rand_idx]-1))
+			if torch.pow(gi:norm(),2) > 1e-8 then
+				if lineSearchToSkip[rand_idx] <= 0 then
+					local Lnew = lineSearch(x,rand_idx,L[rand_idx],fi,gi)
+					-- print(Lnew, L[rand_idx])
+					-- if no backtracking is performed
+					if Lnew == L[rand_idx] then
+						-- accumulate skip backtracking time
+						backtrackingSkip[rand_idx] = backtrackingSkip[rand_idx] + 1
+						-- update time to skip count
+						lineSearchToSkip[rand_idx] = pow(2, (backtrackingSkip[rand_idx]-1))
+					else
+						-- reset backtrackingSkip count and decrease the line search count by 1
+						backtrackingSkip[rand_idx] = 0
+						L[rand_idx] = Lnew
+					end
 				else
-					-- reset backtrackingSkip count and decrease the line search count by 1
-					backtrackingSkip[rand_idx] = 0
 					lineSearchToSkip[rand_idx] = lineSearchToSkip[rand_idx] - 1
-					L[rand_idx] = Lnew
 				end
 				--L[rand_idx] = lineSearch(x,rand_idx,L[rand_idx],fi,gi)
 			end
@@ -146,7 +148,7 @@ function sag_nus(opfunc, x, config, state)
 				L[rand_idx] = 0.5*Lmean
 				sampleRecord[rand_idx] = 1
 			end
-			
+
 			-- alpha, w, (L) update
 			local alpha = (1/Lmax + Lmean)/2
 			x = (1-alpha*lambda)*x - alpha/m*d
@@ -183,10 +185,10 @@ function sag_nus(opfunc, x, config, state)
 			break
 		end
 
-		-- if sampleRecord:sum() == sampleRecord:size(1) then
-		--	verbose('all the training examples are sampled after ', state.updateCount, ' iterations')
-		--	break
-		-- end
+		if sampleRecord:sum() == sampleRecord:size(1) then
+			verbose('all the training examples are sampled after ', state.updateCount, ' iterations')
+			break
+		end
 
 		local converge_point = 1/nWord*d + lambda*x
 		if torch.max(converge_point) <= 1e-5 then

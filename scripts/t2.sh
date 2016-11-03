@@ -19,17 +19,18 @@ function run_exp() {
 }
 
 function plot() {
-	plot_setup="set terminal postscript font ',30'; set style fill pattern border; set xlabel 'CPU time (seconds)'; set yrange[0:*];set ylabel 'Training object value'; set lmargin 5; set tmargin 0; set bmargin 1;set rmargin 0;"
+	plot_setup="set terminal postscript color font ',30'; set style fill pattern border; set xlabel 'CPU time (seconds)'; set yrange[0:*];set ylabel 'Training object value'; set lmargin 5; set tmargin 0; set bmargin 1;set rmargin 0;"
 	for lambda in ${lambdas[@]};do
 		echo "lambda = "$lambda
 		awk '{ if($1 ~ /^[0-9]+$/ && NF == 9) print $0}'  "./output/lbfgs_"$lambda.txt > tmp1.txt
 		awk '{ if($1 ~ /^[0-9]+$/ && NF == 9) print $0}'  "./output/sgd_"$lambda.txt > tmp2.txt
-		awk '{ if($1 ~ /^[0-9]+$/ && NF == 9) print $0}'  "./output/sag_nus_"$lambda.txt > tmp3.txt
-		echo $plot_setup" set output '| ps2pdf - t2_"$lambda".pdf'; plot 'tmp1.txt' using 4:2 w l lw 2 title 'LBFGS', 'tmp2.txt' using 4:2 w l lw 2 title 'SGD', 'tmp3.txt' using 4:2 w l lw 2 title 'SAG-BUS';" | gnuplot
+#		awk '{ if($1 ~ /^[0-9]+$/ && NF == 9) print $0}'  "./output/sag_nus_"$lambda.txt > tmp3.txt
+		echo $plot_setup" set output '| ps2pdf - t2_"$lambda".pdf'; plot 'tmp1.txt' using 4:2 w l lw 2 title 'LBFGS', 'tmp2.txt' using 4:2 w l lw 2 title 'SGD';" | gnuplot
+		#, 'tmp3.txt' using 4:2 w l lw 2 title 'SAG-BUS'
 	done
 	
 #	rm tmp*.txt
 }
 
-run_exp
-#plot
+#run_exp
+plot

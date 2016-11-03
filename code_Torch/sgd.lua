@@ -65,7 +65,7 @@ function sgd(opfunc, x, config, state)
 		-- fx has already computed once at the beginning of the evaluation
 		nIter = nIter + 1
 		state.nIter = state.nIter + 1
-		state.funcEval = state.funcEval + 1
+		state.funcEval = state.updateCount/nWord
 		io.write(string.format("%d %.4f %.4f %.3f %d ", nIter-1, fx, gtol, sys.clock()-start_time, state.funcEval))
 		if monitor then monitor(x) end
 		print('')

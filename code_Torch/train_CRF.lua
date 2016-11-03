@@ -277,7 +277,6 @@ local function Llinesearch(x,idx,Li,fi,gi)
     local f_p,g_p = singleEval(x_p,idx)
     local g_norm = torch.pow(gi:norm(), 2)
 	--print('--------------------')
-	-- print(Li)
 	local count = 0
     while f_p >= (fi - 1/2/Li*g_norm) do
     	Li = 2*Li
@@ -287,7 +286,6 @@ local function Llinesearch(x,idx,Li,fi,gi)
     end
     -- restore the old w parameter of the model
     parameters:copy(x)
-    -- print(Li)
     return Li
 end
 
@@ -301,16 +299,12 @@ local function nonUniformSample(x, L)
 	else
 		-- get the weight of L
 		local p = torch.div(L, L:sum())
-		--print("new p", p)
 		-- sample by weight
 		rand_idx = torch.multinomial(p,1,true)[1]
 	end
 	
 	-- print(rand_idx)
 	local fi, gi = singleEval(x, rand_idx)
-	--if torch.pow(gi:norm(),2) > 1e-8 then
-		--L[idx] = lineSearch(x,idx,L[idx],fi)
-	--end
 	return rand_idx, fi, gi
 end
 

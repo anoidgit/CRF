@@ -81,7 +81,13 @@ Hint: the solver is quasi-Newton (like LBFGS).
 
 Figure \ref{fig:compare_cpuTime} gives the test error curve with different $\lambda$. From the plots we can tell a larger $\lambda$ makes the optimization converge faster. 
 
-{\textcolor{red}{Need explanation here.}
+Consider that the objective function is 
+\begin{align}
+\label{eq:obj_MLE}
+   \ -\frac{1}{n}\sum_{t=1}^n \log p(\yvec^t | X^t) + \frac{\lambda}{2} \rbr{\sum_{k \in \Ycal} \nbr{\wvec_k}^2 + \frac{1}{2} \sum_{ij} T^2_{ij}}.
+\end{align} 
+and the solver is quasi-Newton, which means the $\lambda$ is kept in the second-order gradient.
+As the $\lambda$ increases, more penalization is put on the $l_2$ norm of $\boldsymbol{w}$ and $\boldsymbol{T}$, and  more restrictions regarding on the summation on the parameters. As the domain area for potential parameter estimation will be smaller, and the converging time will be shorter compared with the larger $\lambda$. 
 
 \begin{figure}[t]
 \centering
@@ -268,23 +274,28 @@ and SGD/SAG-NUS randomly picks one out of them at each step.
 \begin{figure}[t]
 \centering
 \subfigure[$\lambda =$ {\sf 1e-2}]{
-\includegraphics[width=5cm]{obj_Torch}}
+\includegraphics[width=5cm]{t2_1e-2}}
 ~~
 \subfigure[$\lambda =$ {\sf 1e-4}]{
-\includegraphics[width=5cm]{obj_Torch}}
+\includegraphics[width=5cm]{t2_1e-4}}
 ~~
 \subfigure[$\lambda =$ {\sf 1e-6}]{
-\includegraphics[width=5cm]{obj_Torch}}
+\includegraphics[width=5cm]{t2_1e-4}}
 \caption{Comparison of LBFGS, SGD, and SAG-NUS over $\lambda \in \{${\sf 1e-2, 1e-4, 1e-6}\}.}
 \label{fig:compare_sgd}
 \end{figure}
 
 {\bf Solution T2.}
 
+We compute the objective value after every 1000 updates. 
+
 {\bf Question T3.}
 What is your general experience of tuning the parameters of the solvers in {\bf Question T2}?
 You do not need to be exhaustive, and just briefly describe what you tried and what you found.
+
 {\bf Solution T3.}
+We have tried different step size, and as we expected, the solution converges slower with a smaller step size.
+We also tried to evaluate the objective function and error every 5, 30 and 100 updates of SGD/SAG-NUS, more frequent computation shows more fluctuation of object value, this also makes sense because of the randomness by sampling.
 
 {\bf Question T4.}
 The advantage of stochastic optimization lies in the low cost per step.
