@@ -25,11 +25,12 @@ function sgd(opfunc, x, config, state)
 	local isverbose = config.verbose or false
 	local sample = config.sampler
 	local fevalIntervel = config.fevalIntervel
+	local lambda = config.lambda
 
 	state.updateCount = state.updateCount or 0
 	state.funcEval = state.funcEval or 0
 	state.nIter = state.nIter or 0
-	
+
 	local start_time = sys.clock()
 
 	-- import some functions
@@ -44,7 +45,6 @@ function sgd(opfunc, x, config, state)
 
 	-- (1) evaluate f(x) and df/dx
 	local fx,g = opfunc(x)
-	local f_old = fx
 
 	-- check optimality of initial point
 	state.tmp1 = state.tmp1 or g.new(g:size()):zero(); 
@@ -57,29 +57,33 @@ function sgd(opfunc, x, config, state)
 		return x,{fx}
 	end
 
-	local f_old = state.f_old
+	local f_old = fx
 	local nIter = 0
+	local x_old = torch.zeros(x:size())
 
 	while nIter < maxIter do
-		if fmod(state.updateCount, fevalIntervel) == 0 then
-			f_old = fx
-			fx,g = opfunc(x)
+		-- fx has already computed once at the beginning of the evaluation
+		nIter = nIter + 1
+		state.nIter = state.nIter + 1
+		state.funcEval = state.funcEval + 1
+		io.write(string.format("%d %.4f %.4f %.3f %d ", nIter-1, fx, gtol, sys.clock()-start_time, state.funcEval))
+		if monitor then monitor(x) end
+		print('')
 
-			nIter = nIter + 1
-			state.nIter = state.nIter + 1
-			state.funcEval = state.funcEval + 1
-			io.write(string.format("%d %.4f %.4f %.3f %d ", nIter-1, fx, gtol, sys.clock()-start_time, state.funcEval))
-			if monitor then monitor(x) end
-			print('')
+		-- stochastic gradient descent
+		for i = 1,fevalIntervel do
+			i,fi,gi = sample(x)
+			-- parameter update with single or individual learning rates
+			if learningRate then
+				gi:add(lambda*x_old)
+				-- x_old:copy(x)
+				state.updateCount = state.updateCount + 1
+				x:add(-learningRate, gi)
+			end
 		end
-		
-		i, fi,gi = sample(x)
 
-		-- parameter update with single or individual learning rates
-		if learningRate then
-			state.updateCount = state.updateCount + 1
-			x:add(-learningRate, gi)
-		end
+		f_old = fx
+		fx,g = opfunc(x)
 
 		------------------------------------------------------------
 		-- check conditions
@@ -89,7 +93,7 @@ function sgd(opfunc, x, config, state)
 			verbose('reached max number of iterations')
 			break
 		end
-		
+
 		tmp1:copy(g):abs()
 		gtol = tmp1:sum()
 		if tmp1:sum() <= tolFun then
@@ -98,7 +102,7 @@ function sgd(opfunc, x, config, state)
 			break
 		end
 
-		if fmod(state.funcEval, fevalIntervel) == 0 and abs(fx-f_old) < tolX then
+		if abs(fx-f_old) < tolX then
 			-- function value changing less than tolX
 			verbose('function value changing less than tolX')
 			break

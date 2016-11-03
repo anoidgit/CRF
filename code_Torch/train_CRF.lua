@@ -2,14 +2,16 @@ require 'nn'
 require 'optim'   
 require 'ClassCRFCriterion'
 require 'LinearCRF'
-require 'sgd'
+require 'SGD'
+require 'SAG_NUS'
 
 cmd = torch.CmdLine()
 cmd:option('-lambda',1e-3,'regularization parameter')
 cmd:option('-optim', 'LBFGS' ,'optimization method')
 cmd:option('-iter',50,'number of maximal iterations')
 cmd:option('-lr',1e-1,'learning rate')
-cmd:option('-b',1,'number of words in gradient update')
+cmd:option('-b',100,'number of words in gradient update')
+cmd:option('-n',100,'number of words used for training')
 -- parse input params
 params = cmd:parse(arg)
 -- print(params)
@@ -39,7 +41,7 @@ opt.learningRate = params.lr	-- fixed step size used in the line search of BFGS
 local train_fname = '../data/train_torch.dat'
 local test_fname = '../data/test_torch.dat'
 
-capWord = 100	-- only use the first 100 words. Otherwise it takes too long to train.
+capWord = params.n	-- only use the first 100 words. Otherwise it takes too long to train.
 -- uncomment the next line if you do not want to cap #words
 -- capWord = math.huge  
 
@@ -48,6 +50,7 @@ optimState = {
 	maxIter = opt.maxIter,
 	nCorrection = opt.nCorrection,
 	verbose = true,			-- print a bit more information from the solver
+	lambda = params.lambda
 	-- lineSearch = optim.lswolfe,  -- if we use this then the function might 
 	-- be evaluated multiple times at each iteration
 }
@@ -74,10 +77,14 @@ max_word_len = torch.max(torch.DoubleTensor{wLen:max(), twLen:max()})
 
 -- Cap the number of words used for training at capWord
 nWord = (#train.wLen)[1]
-if nWord > capWord then nWord = capWord  end
-optimState.fevalIntervel = math.ceil(nWord/3)	-- compute objective function after the number of updates
+-- if capWord < 0, train on all the words
+if capWord > 0 and nWord > capWord then nWord = capWord  end
+optimState.nWord = nWord
+optimState.fevalIntervel = params.b			-- compute objective function after the number of updates
 optimState.L = torch.ones(nWord)			-- Lipschitz constant for each training example
 optimState.sampleRecord = torch.zeros(nWord)			-- record of training example if it is sampled before
+optimState.backtrackingSkip = torch.zeros(nWord)			-- number of sampled word consecutively avoids backtracking
+optimState.lineSearchToSkip = torch.zeros(nWord)			-- number of next samples that line search can be skipped
 
 print('==> training in progress with ' .. nWord .. ' words')
 
@@ -122,18 +129,18 @@ local function feval(x)
 end
 
 -- get gradient and object value of ith word
-local function singleEval(x, i)
+local function singleEval(x, idx)
 	parameters:copy(x)
 	gradParameters:zero()	
 
 	-- out of scope
-	if i < 1 or i > nWord then
+	if idx < 1 or idx > nWord then
 		return nil
 	end
-
+    
 	-- estimate f
-	first = i > 1 and cumwLen[i-1]+1 or 1	--index of the first letter in the word
-	last = cumwLen[i]						--index of the last letter in the word
+	first = idx > 1 and cumwLen[idx-1]+1 or 1	--index of the first letter in the word
+	last = cumwLen[idx]											--index of the last letter in the word
 	local input = torch.linspace(first, last, last-first+1)	
 	local output = model:forward(input)
 	local target = label:sub(first, last)
@@ -144,8 +151,8 @@ local function singleEval(x, i)
 	model:backward(input, df_do)		
 
 	-- gradients and f(X), add regularization
-	gradParameters:add(lambda*x)
-	f = f + lambda*torch.pow(x:norm(), 2)/2
+	-- gradParameters:add(lambda*x)
+	-- f = f + lambda*torch.pow(x:norm(), 2)/2
 
 	-- return df/dX
 	return f, gradParameters
@@ -254,34 +261,65 @@ end
 
 -- sample one training example uniformly and return its f and gradient
 local function uniformSample(x)
-	idx = math.random(nWord)
+	local idx = math.random(nWord)
 	-- print('sample ', idx)
 	return idx, singleEval(x, idx)
 end
 
+-- input:	x:	weight
+--			idx:	sample id
+--			Li: 	old Lipschitz constant
+--			fi:		objective function value without regulation term
+--			gi: 	gradient without regulation term
+-- output: 	Li: Lipschitz constant for each training example
+local function Llinesearch(x,idx,Li,fi,gi)
+    local x_p = torch.add(x, -1/Li, gi)
+    local f_p,g_p = singleEval(x_p,idx)
+    local g_norm = torch.pow(gi:norm(), 2)
+ 	-- f_p = f_p - lambda*torch.pow(x_p:norm(), 2)/2
+	-- g_p:add(-lambda*x_p)
+	--print('--------------------')
+	-- print(Li)
+	local count = 0
+    while f_p >= (fi - 1/2/Li*g_norm) do
+    	Li = 2*Li
+     	x_p:add(-1/Li, gi)
+        f_p,g_p = singleEval(x_p,idx)
+        -- f_p = f_p - lambda*torch.pow(x_p:norm(), 2)/2
+        -- print(idx, Li, f_p, fi, (fi - 1/2/Li*g_norm))
+	--  g_p:add(-lambda*x_p)
+    end
+    -- restore the old w parameter of the model
+    parameters:copy(x)
+    -- print(Li)
+    return Li
+end
+
 -- input x: w in CRF problem
---		 L: Lipschitz constant for each training example
 local function nonUniformSample(x, L)
-	i = math.random()
+	local randi = math.random()
+	local rand_idx = 0
 	-- first time or half probability
-	if L:sum() == L:size(1) or i > 0.5 then
-		idx = math.random(nWord)
+	if L:sum() == L:size(1) or randi > 0.5 then
+		rand_idx = math.random(nWord)
 	else
-		-- get the mean of L
-		p = torch.div(L, L:sum())
+		-- get the weight of L
+		local p = torch.div(L, L:sum())
+		--print("new p", p)
 		-- sample by weight
-		-- !!! UNDONE: sample
-		idx =  0
-
+		rand_idx = torch.multinomial(p,1,true)[1]
 	end
+	
+	-- print(rand_idx)
+	local fi, gi = singleEval(x, rand_idx)
 
-	fi, gi = singleEval(x, idx)
-	if torch.norm(gi) > 1e-8 then
-		-- !!! UNDONE: line search
-		L[idx] = lineSearch()
-	end
-
-	return idx, fi, gi
+	-- subtract 
+	-- fi = fi - lambda*torch.pow(x:norm(), 2)/2
+	-- gi:add(-lambda*x)
+	--if torch.pow(gi:norm(),2) > 1e-8 then
+		--L[idx] = lineSearch(x,idx,L[idx],fi)
+	--end
+	return rand_idx, fi, gi
 end
 
 -- Set the monitor for the solver.
@@ -293,10 +331,10 @@ end
 
 if params.optim == 'sag' then
 	optimState.sampler = nonUniformSample
+	optimState.lineSearch = Llinesearch
 end
 
 -- Really start the optimization
  print('iter fn.val gap time feval.num train_lett_err train_word_err test_lett_err test_word_err')
  x,fx = optimMethod(feval, parameters, optimState)
-
 -- for i=1,#fx do print(i,fx[i]); end	-- secrete
