@@ -100,14 +100,14 @@ function sag_nus(opfunc, x, config, state)
 		state.nIter = state.nIter + 1
 		-- number of effective passes 
 		state.funcEval = state.updateCount/nWord
-		io.write(string.format("%d %.4f %.4f %.3f %d ", nIter-1, fx, gtol, sys.clock()-start_time, state.funcEval))
+		io.write(string.format("%d %.4f %.4f %.3f %.4f ", nIter-1, fx, gtol, sys.clock()-start_time, state.funcEval))
 		if monitor then monitor(x) end
 		print('')
 
 		-- sample and update fevalIntervel times
 		for i = 1,fevalIntervel do
 			local rand_idx,fi,gi = sample(x,L)
-			-- print('sample ', rand_idx, sampleRecord[rand_idx], lineSearchToSkip[rand_idx], L[rand_idx]/L:sum())
+			--print('sample ', rand_idx, sampleRecord[rand_idx], lineSearchToSkip[rand_idx], L[rand_idx]/L:sum())
 			-- update the d
 			d = d + gi - g_old[rand_idx]
 			g_old[rand_idx]:copy(gi)
@@ -185,10 +185,10 @@ function sag_nus(opfunc, x, config, state)
 			break
 		end
 
-		if sampleRecord:sum() == sampleRecord:size(1) then
-			verbose('all the training examples are sampled after ', state.updateCount, ' iterations')
-			break
-		end
+--		if sampleRecord:sum() == sampleRecord:size(1) then
+--			verbose('all the training examples are sampled after ', state.updateCount, ' iterations')
+--			break
+--		end
 
 		local converge_point = 1/nWord*d + lambda*x
 		if torch.max(converge_point) <= 1e-5 then

@@ -26,6 +26,7 @@ function sgd(opfunc, x, config, state)
 	local sample = config.sampler
 	local fevalIntervel = config.fevalIntervel
 	local lambda = config.lambda
+	local nWord = config.nWord
 
 	state.updateCount = state.updateCount or 0
 	state.funcEval = state.funcEval or 0
@@ -66,7 +67,7 @@ function sgd(opfunc, x, config, state)
 		nIter = nIter + 1
 		state.nIter = state.nIter + 1
 		state.funcEval = state.updateCount/nWord
-		io.write(string.format("%d %.4f %.4f %.3f %d ", nIter-1, fx, gtol, sys.clock()-start_time, state.funcEval))
+		io.write(string.format("%d %.4f %.4f %.3f %.4f ", nIter-1, fx, gtol, sys.clock()-start_time, state.funcEval))
 		if monitor then monitor(x) end
 		print('')
 
@@ -84,7 +85,6 @@ function sgd(opfunc, x, config, state)
 
 		f_old = fx
 		fx,g = opfunc(x)
-
 		------------------------------------------------------------
 		-- check conditions
 		------------------------------------------------------------
