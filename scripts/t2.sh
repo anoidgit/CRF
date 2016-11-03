@@ -10,12 +10,12 @@ function run_exp() {
 	cd ../code_Torch
 	for lambda in ${lambdas[@]};do
 		echo "lambda = "$lambda
-		th ./train_CRF.lua -lambda $lambda -optim lbfgs > "lbfgs_"$lambda".txt"
+#		th ./train_CRF.lua -lambda $lambda -optim lbfgs > "lbfgs_"$lambda".txt"
 		th ./train_CRF.lua -lambda $lambda -optim sgd > "sgd_"$lambda".txt"
 #		th ./train_CRF.lua -lambda $lambda -optim sag > "sag_nus_"$lambda".txt"
 	done
 	cd -
-	mv ../code_Torch/*.txt ./output/
+#	mv ../code_Torch/*.txt ./output/
 }
 
 function plot() {
