@@ -19,7 +19,7 @@ function run_exp() {
 }
 
 function plot() {
-	plot_setup="set terminal postscript color font ',30'; set style fill pattern border; set xlabel 'CPU time (seconds)'; set yrange[0:*];set ylabel 'Training object value'; set lmargin 5; set tmargin 0; set bmargin 1;set rmargin 0;"
+	plot_setup="set terminal postscript color font ',30'; set style fill pattern border; set xlabel 'CPU time (seconds)'; set yrange[0:*]; set xtics 200; set ylabel 'Training object value'; set lmargin 5; set tmargin 0; set bmargin 1;set rmargin 2;"
 	for lambda in ${lambdas[@]};do
 		echo "lambda = "$lambda
 		awk '{ if($1 ~ /^[0-9]+$/ && NF == 9) print $0}'  "./output/lbfgs_"$lambda.txt > tmp1.txt
