@@ -24,12 +24,11 @@ function plot() {
 		echo "lambda = "$lambda
 		awk '{ if($1 ~ /^[0-9]+$/ && NF == 9) print $0}'  "./output/lbfgs_"$lambda.txt > tmp1.txt
 		awk '{ if($1 ~ /^[0-9]+$/ && NF == 9) print $0}'  "./output/sgd_"$lambda.txt > tmp2.txt
-#		awk '{ if($1 ~ /^[0-9]+$/ && NF == 9) print $0}'  "./output/sag_nus_"$lambda.txt > tmp3.txt
-		echo $plot_setup" set output '| ps2pdf - t2_"$lambda".pdf'; plot 'tmp1.txt' using 4:2 w l lw 2 title 'LBFGS', 'tmp2.txt' using 4:2 w l lw 2 title 'SGD';" | gnuplot
-		#, 'tmp3.txt' using 4:2 w l lw 2 title 'SAG-BUS'
+		awk '{ if($1 ~ /^[0-9]+$/ && NF == 9) print $0}'  "./output/sag_nus_"$lambda.txt > tmp3.txt
+		echo $plot_setup" set output '| ps2pdf - t2_"$lambda".pdf'; plot 'tmp1.txt' using 4:2 w l lw 2 title 'LBFGS', 'tmp2.txt' using 4:2 w l lw 2 title 'SGD', 'tmp3.txt' using 4:2 w l lw 2 title 'SAG-BUS';" | gnuplot
 	done
 	
-#	rm tmp*.txt
+	rm tmp*.txt
 }
 
 #run_exp

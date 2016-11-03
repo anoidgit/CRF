@@ -270,7 +270,6 @@ So you may compute the value every 1000 updates (or pick a frequency that you fe
 The training set is again the first 100 words,
 and SGD/SAG-NUS randomly picks one out of them at each step.
 
-
 \begin{figure}[t]
 \centering
 \subfigure[$\lambda =$ {\sf 1e-2}]{
@@ -287,7 +286,7 @@ and SGD/SAG-NUS randomly picks one out of them at each step.
 
 {\bf Solution T2.}
 
-We compute the objective value after every 1000 updates. 
+We compute the objective value after every 1000 updates. From the plots we can see that generally SGD converges faster than LBFGS and a lager $\lambda$ results in faster convergence. When the $\lambda = {\sf 1e-2}$, the solution still has some fluctuation after convergence. 
 
 {\bf Question T3.}
 What is your general experience of tuning the parameters of the solvers in {\bf Question T2}?
@@ -310,10 +309,14 @@ Re-produce Figure \ref{fig:word_err} (word-wise error) but do \emph{not} include
 Instead, include the test error of LBFGS, SGD, and SAG-NUS.
 Now it should look like Figure \ref{fig:compare_word_err}.
 
-\begin{figure}[t] 
+\begin{figure}[t]
 \centering
-\includegraphics[width=5cm]{error_Torch}
-\caption{Comparison of word-wise error on the test data for $\lambda=$???.}
+\subfigure[Letter-wise error]{
+\includegraphics[width=5cm]{t2_1e-2}}
+~~
+\subfigure[Word-wise error]{
+\includegraphics[width=5cm]{t2_1e-4}}
+\caption{Comparison of testing error on the test data for $\lambda=1e-4$.}
 \label{fig:compare_word_err}
 \end{figure}
 
@@ -328,46 +331,10 @@ Again for stochastic methods, the error can be computed every, say, 1000 steps.
 
 What conclusions can be drawn from the plot?
 
-{\bf Solution T4.}
-
 {\bf Extra credit.}
 You may also plot a similar figure for the test letter-wise error, and that will earn you extra 10 points out of 100.
 
-
-
-\iffalse
-
-memo
-
-\begin{verbatim}
-x = torch.ones(3,3)
-y = x:sub(1,2)
-y = torch.zeros(2,3)
-
-th> y
- 0  0  0
- 0  0  0
-[torch.DoubleTensor of size 2x3]
-
-th> x
- 1  1  1
- 1  1  1
- 1  1  1
-[torch.DoubleTensor of size 3x3]
-\end{verbatim}
-
-read the first 53 lines of \verb!torch/pkg/optim/lbfgs.lua! to understand the parameters for lbfgs.
-
-
-The return values of require, e.g. \verb!require "nn"!, are cached so a file is run at most once,
-even when require'd many times.
-So if you edit the module and rerun the code that uses this module via "require",
-your changes won't be picked up.
-You may quit torch and restart it to re-load the module.
-You may ``unrequire" by \url{http://lua-users.org/lists/lua-l/2009-03/msg00587.html}
-
-\newpage
-\fi
+{\bf Solution T4.}
 
 
 \end{document}
