@@ -185,10 +185,17 @@ function sag_nus(opfunc, x, config, state)
 			break
 		end
 
+<<<<<<< HEAD
+		--if sampleRecord:sum() == sampleRecord:size(1) then
+		--	verbose('all the training examples are sampled after ', state.updateCount, ' iterations')
+		--	break
+		--end
+=======
 --		if sampleRecord:sum() == sampleRecord:size(1) then
 --			verbose('all the training examples are sampled after ', state.updateCount, ' iterations')
 --			break
 --		end
+>>>>>>> ef947785854f597cc8e3660616fe8cea6b1707d5
 
 		local converge_point = 1/nWord*d + lambda*x
 		if torch.max(converge_point) <= 1e-5 then
