@@ -1,6 +1,7 @@
 #!/bin/bash
 
-lambdas=("1e-2" "1e-4" "1e-6")
+#lambdas=("1e-2" "1e-4" "1e-6")
+lambdas=("1e-6")
 
 if [[ -f tmp.txt ]];then
 	rm tmp.txt
@@ -11,8 +12,8 @@ function run_exp() {
 	for lambda in ${lambdas[@]};do
 		echo "lambda = "$lambda
 #		th ./train_CRF.lua -lambda $lambda -optim lbfgs > "lbfgs_"$lambda".txt"
-		th ./train_CRF.lua -lambda $lambda -optim sgd > "sgd_"$lambda".txt"
-#		th ./train_CRF.lua -lambda $lambda -optim sag > "sag_nus_"$lambda".txt"
+#		th ./train_CRF.lua -lambda $lambda -optim sgd > "sgd_"$lambda".txt"
+		th ./train_CRF.lua -lambda $lambda -optim sag > "sag_nus_"$lambda".txt"
 	done
 	cd -
 #	mv ../code_Torch/*.txt ./output/
@@ -31,5 +32,5 @@ function plot() {
 	rm tmp*.txt
 }
 
-#run_exp
-plot
+run_exp
+#plot
