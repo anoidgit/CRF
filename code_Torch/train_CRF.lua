@@ -84,7 +84,7 @@ optimState.fevalIntervel = params.b			-- compute objective function after the nu
 optimState.L = torch.ones(nWord)			-- Lipschitz constant for each training example
 optimState.sampleRecord = torch.zeros(nWord)			-- record of training example if it is sampled before
 optimState.backtrackingSkip = torch.zeros(nWord)			-- number of sampled word consecutively avoids backtracking
-optimState.lineSearchToSkip = torch.zeros(nWord)			-- number of next samples that line search can be skipped
+optimState.lineSearchToSkip = torch.Tensor(nWord):fill(-1)			-- number of next samples that line search can be skipped
 
 print('==> training in progress with ' .. nWord .. ' words')
 
