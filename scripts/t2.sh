@@ -1,7 +1,6 @@
 #!/bin/bash
 
-#lambdas=("1e-2" "1e-4" "1e-6")
-lambdas=("1e-6")
+lambdas=("1e-2" "1e-4" "1e-6")
 
 if [[ -f tmp.txt ]];then
 	rm tmp.txt
@@ -27,11 +26,10 @@ function plot() {
 		awk '{ if($1 ~ /^[0-9]+$/ && NF == 9) print $0}'  "./output/sgd_"$lambda.txt > tmp2.txt
 		awk '{ if($1 ~ /^[0-9]+$/ && NF == 9) print $0}'  "./output/sag_nus_"$lambda.txt > tmp3.txt
 		echo $plot_setup" set output '| ps2pdf - t2_"$lambda".pdf'; plot 'tmp1.txt' using 4:2 w l lw 2 title 'LBFGS', 'tmp2.txt' using 4:2 w l lw 2 title 'SGD', 'tmp3.txt' using 4:2 w l lw 2 title 'SAG-NUS';" | gnuplot
-		break
 	done
 	
 	rm tmp*.txt
 }
 
-run_exp
-#plot
+#run_exp
+plot
