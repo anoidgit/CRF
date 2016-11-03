@@ -284,6 +284,20 @@ and SGD/SAG-NUS randomly picks one out of them at each step.
 \label{fig:compare_sgd}
 \end{figure}
 
+\begin{figure}[t]
+\centering
+\subfigure[$\lambda =$ {\sf 1e-2}]{
+\includegraphics[width=5cm]{t2_1e-2_closer}}
+~~
+\subfigure[$\lambda =$ {\sf 1e-4}]{
+\includegraphics[width=5cm]{t2_1e-4_closer}}
+~~
+\subfigure[$\lambda =$ {\sf 1e-6}]{
+\includegraphics[width=5cm]{t2_1e-6_closer}}
+\caption{Closer look of comparison of LBFGS, SGD, and SAG-NUS over $\lambda \in \{${\sf 1e-2, 1e-4, 1e-6}\}.}
+\label{fig:compare_sgd_closer}
+\end{figure}
+
 {\bf Solution T2.}
 
 We compute the objective value after every 1000 updates. From the plots we can see that generally SGD converges faster than LBFGS and a lager $\lambda$ results in faster convergence. When the $\lambda = {\sf 1e-2}$, the solution still has some fluctuation after convergence. 
