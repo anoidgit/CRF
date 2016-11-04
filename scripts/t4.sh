@@ -10,7 +10,7 @@ function run_exp() {
 	cd ../code_Torch
 	echo "lambda = "$lambda
 	th ./train_CRF.lua -lambda $lambda -optim sgd -n -1 -b 1000 > "sgd_all_"$lambda".txt"
-#	th ./train_CRF.lua -lambda $lambda -optim sag -n -1 -b 1000 > "sag_nus_all_"$lambda".txt"
+	th ./train_CRF.lua -lambda $lambda -optim sag -n -1 -b 1000 > "sag_nus_all_"$lambda".txt"
 	cd -
 	mv ../code_Torch/*.txt ./output/
 }
@@ -29,4 +29,5 @@ function plot() {
 	rm tmp*.txt
 }
 
-run_exp
+#run_exp
+plot
