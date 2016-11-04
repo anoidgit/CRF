@@ -219,6 +219,7 @@ See \verb!sample_out_Torch.txt! for an example (only 4 lines are shown there, an
 
 For the questions below, you may create new files,
 \eg\ if you feel it more convenient to collect SGD related code in a separate file.
+
 {\bf Solution T1.}
 The output of the first 10 iterations and the last line is: 
 
@@ -300,7 +301,7 @@ and SGD/SAG-NUS randomly picks one out of them at each step.
 
 {\bf Solution T2.}
 
-We compute the objective value after every 1000 updates. From the plots we can see that generally SGD converges faster than LBFGS and a lager $\lambda$ results in faster convergence. When the $\lambda = {\sf 1e-2}$, the solution still has some fluctuation after convergence. 
+For small training set (100 words), we compute the objective value after every 100 updates. Figure \ref{fig:compare_sgd} is the overall performance of three methods and Figure \ref{fig:compare_sgd_closer} gives a closer look of LBFGS and SGD since the scale in Figure \ref{fig:compare_sgd} is not able to show the difference of SGD and LBFGS. From the plots we can see that generally SGD converges faster than LBFGS and a lager $\lambda$ results in faster convergence. When the $\lambda = {\sf 1e-2}$, the solution still has some fluctuation after convergence. For the SAG-NUS method, it can been seen that it performs the worst in general among these three methods. And there is always a spike after the first 100 updates. Furthermore, the convergence status of it is greatly associated with the value of $\lambda$. More specifically, as $\lambda$ goes larger, it becomes harder for SAG-NUS to reach convergence. After checking the step size calculated based on the $L_g$ in SAG-NUS, we noticed that the step size is first around 0.9 then drop to 0.5 during the updates. This step size is much larger compared with the 0.1 we choose for the SGD method. Therefore, the first several iteration might drive the $w$ to far away from the truth due to the large step size, and the large $\lambda$ can also make the things get worse according to the update function.
 
 {\bf Question T3.}
 What is your general experience of tuning the parameters of the solvers in {\bf Question T2}?
@@ -308,7 +309,7 @@ You do not need to be exhaustive, and just briefly describe what you tried and w
 
 {\bf Solution T3.}
 We have tried different step size, and as we expected, the solution converges slower with a smaller step size.
-We also tried to evaluate the objective function and error every 5, 30 and 100 updates of SGD/SAG-NUS, more frequent computation shows more fluctuation of object value, this also makes sense because of the randomness by sampling.
+We also tried to evaluate the objective function and error every 5, 30 and 100 updates of SGD/SAG-NUS, more frequent computation shows more fluctuation of object value, this also makes sense because of the randomness by sampling. We also see that different $\lambda$ takes different time to converge, generally large $\lambda$ should have a larger maximal iteration number.
 
 {\bf Question T4.}
 The advantage of stochastic optimization lies in the low cost per step.
@@ -326,10 +327,10 @@ Now it should look like Figure \ref{fig:compare_word_err}.
 \begin{figure}[t]
 \centering
 \subfigure[Letter-wise error]{
-\includegraphics[width=5cm]{t2_1e-2}}
+\includegraphics[width=5cm]{t3_letter_err}}
 ~~
 \subfigure[Word-wise error]{
-\includegraphics[width=5cm]{t2_1e-4}}
+\includegraphics[width=5cm]{t3_word_err}}
 \caption{Comparison of testing error on the test data for $\lambda=1e-4$.}
 \label{fig:compare_word_err}
 \end{figure}
@@ -349,6 +350,6 @@ What conclusions can be drawn from the plot?
 You may also plot a similar figure for the test letter-wise error, and that will earn you extra 10 points out of 100.
 
 {\bf Solution T4.}
-
+Figure \ref{fig:compare_word_err} gives the comparison of letter-wise and word-wise error of three methods, trained on the entire training set with 3348 words. In LBFGS, the solver has 184 effective passes, however, since the torch  version is quite slow, and both SGD and SAG-NUS tend to converge after 20 effective passes, we constrain the x axis to be $0\sim100$. Consistent with our conclusion above, SAG-NUS performs the worse in terms of test error and LBFGS achieves the lowest letter-wise and word-wise error. As stochastic methods, SGD and SAG-NUS has very fast convergence rate at the first several iterations, and keep fluctuating after convergence, while LBFGS has a relative slow convergence rate. For the performance of SAG-NUS, we believe that its strategy is too risky and sometimes makes too big step during update and stuck in local minimal. Overall, SGD is a good balance between convergence rate and accuracy.
 
 \end{document}
