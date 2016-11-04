@@ -10,6 +10,6 @@ plot_setup="set terminal postscript color font ',30'; set style fill pattern bor
 
 awk '{ if($1 ~ /^[0-9]+$/ && NF == 9) print $0}'  "./output/"$lambda.txt > tmp.txt
 
-echo $plot_setup" set ylabel 'Letter-wise error'; set output '| ps2pdf - p3_letter_err.pdf'; plot 'tmp.txt' using 4:("'$6'"/100.0) w l lw 2 lc rgb 'black' title 'Training', 'tmp.txt' using 4:("'$8'"/100.0)  w l lw 4 dt 6 lc rgb 'red' title 'Testing';" | gnuplot
-echo $plot_setup" set ylabel 'Word-wise error'; set output '| ps2pdf - p3_word_err.pdf'; plot 'tmp.txt' using 4:("'$7'"/100.0) w l lw 2 lc rgb 'black' title 'Training', 'tmp.txt' using 4:("'$9'"/100.0) w l lw 4 dt 6 lc rgb 'red' title 'Testing';" | gnuplot
+echo $plot_setup" set ylabel 'Letter-wise error'; set output '| ps2pdf - p3_letter_err.pdf'; plot 'tmp.txt' using 4:("'$6'"/100.0) w l lw 2 title 'Training', 'tmp.txt' using 4:("'$8'"/100.0)  w l lw 2 title 'Testing';" | gnuplot
+echo $plot_setup" set ylabel 'Word-wise error'; set output '| ps2pdf - p3_word_err.pdf'; plot 'tmp.txt' using 4:("'$7'"/100.0) w l lw 2 title 'Training', 'tmp.txt' using 4:("'$9'"/100.0) w l lw 2 title 'Testing';" | gnuplot
 
