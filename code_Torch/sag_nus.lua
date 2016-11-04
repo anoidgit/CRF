@@ -158,7 +158,6 @@ function sag_nus(opfunc, x, config, state)
 			--print('done update the L!' , state.updateCount)
 			tmp1:copy(d):abs()
 			dtol = tmp1:sum()
-			print(state.updateCount, fi, dtol, L[rand_idx])
 		end
 
 		f_old = fx or 0
