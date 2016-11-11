@@ -276,6 +276,7 @@ local function Llinesearch(x,idx,Li,fi,gi)
     local x_p = torch.add(x, -1/Li, gi)
     local f_p,g_p = singleEval(x_p,idx)
     local g_norm = torch.pow(gi:norm(), 2)
+
     while f_p >= (fi - 1/2/Li*g_norm) do
     	Li = 2*Li
      	x_p:add(-1/Li, gi)
